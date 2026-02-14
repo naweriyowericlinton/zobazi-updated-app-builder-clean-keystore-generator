@@ -1,17 +1,14 @@
 workflows:
   android-workflow:
-    name: Naweri Beast Key Generator
+    name: Naweri Beast Dynamic Generator
+    max_build_duration: 10
     instance_type: mac_mini_m1
-    max_build_duration: 5
-    environment:
-      vars:
-        KEYSTORE_FILENAME: "dynamic_key.jks"
     scripts:
-      - name: Generate Dynamic Keystore
+      - name: Generate JKS Keystore
         script: |
-          # Create the .jks file using values passed from PHP
+          # Use the filename provided by PHP
           keytool -genkeypair -v \
-            -keystore $KEYSTORE_FILENAME \
+            -keystore $DYNAMIC_FILENAME \
             -alias "$KEY_ALIAS" \
             -storepass "$KEYSTORE_PASSWORD" \
             -keypass "$KEYSTORE_PASSWORD" \
@@ -21,11 +18,11 @@ workflows:
             -dname "CN=$PUBLISHER_NAME, OU=$ORG_UNIT, O=$ORG_NAME, L=$CITY, S=$STATE, C=$COUNTRY" \
             -noprompt
 
-      - name: Secure Callback to Naweri Server
+      - name: Post File Back to PHP
         script: |
-          # Post the JKS file back to your unified cron endpoint
+          # Send the file and its dynamic name back for DB storage
           curl -X POST $CALLBACK_URL \
-            -F "keystore_file=@$KEYSTORE_FILENAME" \
+            -F "keystore_file=@$DYNAMIC_FILENAME" \
+            -F "dynamic_filename=$DYNAMIC_FILENAME" \
             -F "auth_token=$INTERNAL_TOKEN" \
-            -F "db_id=$DB_RECORD_ID" \
-            -F "owner_id=$OWNER_ID"
+            -F "db_id=$DB_RECORD_ID"
